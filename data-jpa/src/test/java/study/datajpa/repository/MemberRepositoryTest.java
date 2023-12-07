@@ -1,11 +1,11 @@
 package study.datajpa.repository;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -311,4 +311,87 @@ public class MemberRepositoryTest {
         // then
 
     }
+
+     @Test
+     public void callCustom() throws Exception{
+
+         List<Member> result = memberRepository.findMemberCustom();
+
+
+     }
+
+
+    @Test
+    public void specBasic() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+        em.flush();
+        em.clear();
+        //when
+        Specification<Member> spec = MemberSpec.username("m1").and(MemberSpec.teamName("teamA"));
+        List<Member> result = memberRepository.findAll(spec);
+        //then
+        Assertions.assertThat(result.size()).isEqualTo(1);
+    }
+
+
+     @Test
+     public void jpaEventBaseEntity() throws Exception{
+         // given
+         Member member = new Member("member1");
+         memberRepository.save(member); //@PrePersist
+
+         Thread.sleep(100);
+         member.setUsername("member2");
+
+         em.flush(); //@PreUpdate
+         em.clear();
+
+         // when
+         Member findMember = memberRepository.findById(member.getId()).get();
+
+         // then
+         System.out.println("findMember.createdDate = " +
+                 findMember.getCreatedDate());
+//         System.out.println("findMember.updatedDate = " +
+//                 findMember.getUpdatedDate());
+         System.out.println("findMember.createdDate = " +
+                 findMember.getLastModifiedBy());
+         System.out.println("findMember.createdDate = " +
+                 findMember.getLastModifiedDate());
+
+
+     }
+
+
+
+    @Test
+    public void QueryByExample() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+        em.persist(new Member("m1", 0, teamA));
+        em.persist(new Member("m2", 0, teamA));
+        em.flush();
+        //when
+        //Probe 생성
+        Member member = new Member("m1");
+        Team team = new Team("teamA"); //내부조인으로 teamA 가능
+        member.setTeam(team);
+        //ExampleMatcher 생성, age 프로퍼티는 무시
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnorePaths("age");
+        Example<Member> example = Example.of(member, matcher);
+        List<Member> result = memberRepository.findAll(example);
+        //then
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+
+
 }

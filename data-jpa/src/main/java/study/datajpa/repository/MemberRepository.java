@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom ,JpaSpecificationExecutor<Member>{
 //    List<Member> findByUsername(String username);
 
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
@@ -89,6 +89,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
 //    @Lock(LockModeType.OPTIMISTIC)
     List<Member> findLockByUsername(String username);
+
+
 }
 
 // 스프링 데이터 JPA가 제공하는 쿼리 메소드 기능
